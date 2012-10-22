@@ -69,7 +69,7 @@ function loadOptions() {
   LOG_FILE="${SYS_DIR}\log\mirror-sync.log"
   
   while [ $# -gt 0 ]; do
-    case "$${1:0:1}" in
+    case "${1:0:1}" in
       "-")
         argOption "$1" "$2"
         shift; shift;
