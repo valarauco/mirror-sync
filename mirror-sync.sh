@@ -26,11 +26,11 @@
 VERSION="v0.1"
 
 function printHelp() {
-  echo -e "\nMirror Sync ${VERSION} - Manuel Delgado <manuel.delgado at ucr.ac.cr>"
+  echo -e "/nMirror Sync ${VERSION} - Manuel Delgado <manuel.delgado at ucr.ac.cr>"
   if [ "$1" ]; then
     printError "$1"
   fi
-  echo -e "\nUSE: ${0} [options] mirror mirror2 ...
+  echo -e "/nUSE: ${0} [options] mirror mirror2 ...
   Parameter <mirror> is the name of the mirror configfile in the form 
     <mirror.cnf> inside the configuration folder.
   
@@ -64,9 +64,9 @@ function printLog() {
 }
 
 function loadOptions() {
-  SYS_DIR=`pwd`
-  CFG_DIR="${SYS_DIR}\config"
-  LOG_FILE="${SYS_DIR}\log\mirror-sync.log"
+  BASE_DIR=`pwd`
+  CFG_DIR="${BASE_DIR}/config"
+  LOG_FILE="${BASE_DIR}/log/mirror-sync.log"
   
   while [ $# -gt 0 ]; do
     case "${1:0:1}" in
@@ -81,7 +81,7 @@ function loadOptions() {
     esac
   done
   
-  CFG_FILE="${CFG_DIR}\mirror-sync.cfg"
+  CFG_FILE="${CFG_DIR}/mirror-sync.cfg"
 }
 
 function argOption() {
@@ -123,9 +123,11 @@ function loadConfig() {
 
 function syncMirrors() {
   for (( i = 0 ; i < ${#LST_MIRRORS[@]} ; i++ )); do
-    MIRROR_FILE="${CFG_DIR}/${LST_MIRRORS[$i]}.cfg"
+    MIRROR_NAME=$LST_MIRRORS[$i]
+    MIRROR_FILE="${CFG_DIR}/${MIRROR_NAME}.cfg"
     if [ -r $MIRROR_FILE ]; then
-      echo "--"
+      . "${CFG_DIR}/defaults"
+      . $MIRROR_FILE
     else
       printError "$MIRROR_FILE is not a valid mirror configuration file"
     fi

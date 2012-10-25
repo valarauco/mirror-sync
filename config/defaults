@@ -1,0 +1,22 @@
+## DO NOT CHANGE, ONLY IF NECESSARY
+TO="/srv/mirrors/repo-x/"
+RSYNC_PATH="repo-x"
+RSYNC_HOST=some.mirror.org
+RSYNC_USER=
+RSYNC_PASSWORD=
+MIRROR_LOG="${BASE_DIR}/log/${MIRROR_NAME}.log"
+MAILTO="root"
+ERRORSONLY="true"
+FULLLOGS="false"
+EXCLUDE=""
+LOCK="${TO}/Mirror-sync-in-Progress-${LOCALNAME}"
+LOCKTIMEOUT=${LOCKTIMEOUT:-3600}
+RSYNC_EXTRA=""
+RSYNC_PASS=1
+RSYNC_BW=""
+RSYNC_OPTIONS="-travplH --timeout 3600 --stats --exclude ${LOCK} "
+RSYNC_OPTIONS1="--exclude 'Packages*' --exclude 'Sources*' --exclude 'Release*' --exclude ls-lR*"
+RSYNC_OPTIONS2=" --delay-updates --delete --delete-after --delete-excluded"
+HOOK1=
+HOOK2=
+HOOK3=
