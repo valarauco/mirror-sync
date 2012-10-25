@@ -1,0 +1,110 @@
+########################################################################
+########################################################################
+## This is a sample configuration file for the mirror-sync script.    ##
+## Most of the values are commented out and just shown here for       ##
+## completeness, together with their default value.                   ##
+## Based on ftpsync config files                                      ##
+########################################################################
+########################################################################
+
+## This is used for things like the trace and lock files and 
+## should always be the full hostname of the mirror.
+#LOCALNAME=`hostname -f`
+
+## Destination of the mirrored files. Should be an empty directory.
+## CAREFUL, this directory will contain the mirror. Everything else
+## that might have happened to be in there WILL BE GONE after the mirror sync!
+#TO="/srv/mirrors/repo-x/"
+
+## The upstream name of the rsync share module.
+##
+## You can find out what modules your upstream mirror supports by running
+## rsync YOURUPSTREAMSERVER::
+## (You might have to export RSYNC_USER/RSYNC_PASSWORD for this to work)
+#RSYNC_PATH="repo-x"
+
+## The host we mirror from (upstream mirror server)
+#RSYNC_HOST=some.mirror.org
+
+## In case we need a user to access the rsync module at our upstream host
+#RSYNC_USER=
+
+## If we need a user we also need a password
+#RSYNC_PASSWORD=
+
+## Name of this specific mirror logfile.
+## Note that ${MIRROR_NAME} is set by the script depending on the way it
+## is called. See README for more info
+#MIRROR_LOG="${BASE_DIR}/log/${MIRROR_NAME}.log"
+
+## The script can send logs (or error messages) to a mail address.
+#MAILTO="root"
+
+## If true it will only send mails if a mirror sync fails.
+## If false it will send mail about every sync.
+#ERRORSONLY="true"
+
+## If you want the logs to also include output of rsync, set this to true.
+## Careful, the logs can get pretty big, especially if it is the first mirror
+## run
+#FULLLOGS="false"
+
+## If you want to exclude files from the rsync run, put --exclude 
+## statements here.
+## See man rsync(1) for the exact syntax, these are passed to rsync as 
+## written here.
+#EXCLUDE=""
+
+## Our own lockfile (only one sync should run at any time)
+#LOCK="${TO}/Mirror-sync-in-Progress-${LOCALNAME}"
+
+# Timeout for the lockfile, in case we have bash older than v4 (and no /proc)
+# LOCKTIMEOUT=${LOCKTIMEOUT:-3600}
+
+## Extra rsync options as defined by the local admin.
+##
+## Please note that these options are added to EVERY rsync call.
+## Also note that these are added at the beginning of the rsync call, as
+## the very first set of options.
+## Please ensure you do not add a conflict with the usual rsync options as
+## shown below.
+# RSYNC_EXTRA=""
+
+## Number of rsync executions
+## Some mirrors recommend two rsync executions with diferent options each other
+#RSYNC_PASS=1
+
+## limit I/O bandwidth. Value is KBytes per second, unset or 0 means unlimited
+#RSYNC_BW=""
+
+## BE VERY CAREFUL WHEN YOU CHANGE THE RSYNC_OPTIONS!
+
+## Default rsync options every rsync invocation sees.
+##  -varlHpt means:
+##    -v, --verbose      increase verbosity
+##    -a, --archive      archive mode; equals -rlptgoD (no -H,-A,-X)
+##    -r, --recursive    recurse into directories
+##    -l, --links        copy symlinks as symlinks
+##    -H, --hard-links   preserve hard links
+##    -p, --perms        preserve permissions
+##    -t, --times        preserve modification times
+#RSYNC_OPTIONS="-travplH --timeout 3600 --stats --exclude ${LOCK} "
+
+## Options in the first pass. We may do not want the Packages/Source indices
+## here, and we also do not want to delete any files yet.
+#RSYNC_OPTIONS1="--exclude 'Packages*' --exclude 'Sources*' --exclude 'Release*' --exclude ls-lR*"
+
+## Options the second pass gets. Now we want the Packages/Source indices too
+## and we also want to delete files. We also want to delete files that are
+## excluded.
+#RSYNC_OPTIONS2=" --delay-updates --delete --delete-after --delete-excluded"
+
+
+## Hook scripts can be run at various places during the sync.
+## Leave them blank if you don't want any
+## Hook1: After lock is acquired, before first rsync
+## Hook2: After first rsync, if successful
+## Hook3: After second rsync, if successful
+#HOOK1=
+#HOOK2=
+#HOOK3=

@@ -55,7 +55,7 @@ function printError() {
 
 function printLog() {
   DATA="$1"
-  if [ -w "$LOG_FILE" ]; then
+  if [ -f "$LOG_FILE" ]; then
     DATE=`date -u` #TODO cambiar por una fecha más corta  
     echo "[${DATE}] mirror-sync :: ${DATA}" >> $LOG_FILE
   else
@@ -128,6 +128,7 @@ function syncMirrors() {
     if [ -r $MIRROR_FILE ]; then
       . "${CFG_DIR}/defaults"
       . $MIRROR_FILE
+      
     else
       printError "$MIRROR_FILE is not a valid mirror configuration file"
     fi
