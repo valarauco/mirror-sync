@@ -26,11 +26,11 @@
 VERSION="v0.1"
 
 function printHelp() {
-  echo -e "/nMirror Sync ${VERSION} - Manuel Delgado <manuel.delgado at ucr.ac.cr>"
+  echo -e "\nMirror Sync ${VERSION} - Manuel Delgado <manuel.delgado at ucr.ac.cr>"
   if [ "$1" ]; then
     printError "$1"
   fi
-  echo -e "/nUSE: ${0} [options] mirror mirror2 ...
+  echo -e "\nUSE: ${0} [options] mirror mirror2 ...
   Parameter <mirror> is the name of the mirror configfile in the form 
     <mirror.cnf> inside the configuration folder.
   
@@ -55,12 +55,12 @@ function printError() {
 
 function printLog() {
   DATA="$1"
-  if [ ! -f "$LOG_FILE" ]; then
+  if [ ! -f "$LOG_FILE" -a "$LOG_FILE" ]; then
     touch "$LOG_FILE"
   fi
   if [ -w "$LOG_FILE" ]; then
     DATE=`date -u` #TODO cambiar por una fecha más corta ISO  
-    echo "[${DATE}] mirror-sync :: ${DATA}" >> $LOG_FILE
+    echo "[${DATE}] mirror-sync :: ${DATA}" >> "$LOG_FILE"
   else
     echo "Error :: Logfile not exist or is not writable" >&2
   fi
@@ -70,6 +70,11 @@ function loadOptions() {
   BASE_DIR=`pwd`
   CFG_DIR="${BASE_DIR}/config"
   LOG_FILE="${BASE_DIR}/log/mirror-sync.log"
+  
+  if [ $# -lt 1 ];then
+    printHelp "Must specify a mirror"
+    exit 1
+  fi
   
   while [ $# -gt 0 ]; do
     case "${1:0:1}" in
@@ -118,7 +123,7 @@ function argOption() {
 
 function loadConfig() {
   if [ -r "$CFG_FILE" ]; then
-    . $CFG_FILE
+    . "$CFG_FILE"
     if [ ! -x "$RSYNC_BIN" ]; then
       printError "Can not execute rsync from $RSYNC_BIN"
       exit 1
@@ -139,7 +144,7 @@ function syncMirrors() {
     MIRROR_FILE="${CFG_DIR}/${MIRROR_NAME}.cfg"
     if [ -r "$MIRROR_FILE" ]; then
       . "${CFG_DIR}/defaults"
-      . $MIRROR_FILE
+      . "$MIRROR_FILE"
       (
          $FLOCK_BIN -n 9 || printError "El proceso ya esta en ejecución"
          runRsync
@@ -189,5 +194,8 @@ function sendMailTo() {
   fi
 }
 
-printHelp "People working... not finish yet"
+loadOptions $@
+loadConfig
+
+#printHelp "People working... not finish yet"
 
