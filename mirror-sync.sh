@@ -55,7 +55,10 @@ function printError() {
 
 function printLog() {
   DATA="$1"
-  if [ -f "$LOG_FILE" ]; then
+  if [ ! -f "$LOG_FILE" ]; then
+    touch "$LOG_FILE"
+  fi
+  if [ -w "$LOG_FILE" ]; then
     DATE=`date -u` #TODO cambiar por una fecha más corta  
     echo "[${DATE}] mirror-sync :: ${DATA}" >> $LOG_FILE
   else
@@ -125,14 +128,36 @@ function syncMirrors() {
   for (( i = 0 ; i < ${#LST_MIRRORS[@]} ; i++ )); do
     MIRROR_NAME=$LST_MIRRORS[$i]
     MIRROR_FILE="${CFG_DIR}/${MIRROR_NAME}.cfg"
-    if [ -r $MIRROR_FILE ]; then
+    if [ -r "$MIRROR_FILE" ]; then
       . "${CFG_DIR}/defaults"
       . $MIRROR_FILE
-      
+      runRsync
     else
       printError "$MIRROR_FILE is not a valid mirror configuration file"
     fi
   done
+}
+
+function runRsync(){
+  if [ -x $RSYNC_BIN ]; then
+    for (( i = 1 ; i <= $RSYNC_PASS ; i++ )); do
+      $RSYNC_OPTIONSN="RSYNC_OPTIONS${i}"
+      $RSYNC_ARGS="$RSYNC_EXTRA $EXCLUDE $RSYNC_OPTIONS ${!RSYNC_OPTIONSN}"
+      if [ "$RSYNC_BW" ]; then #TODO check if = 0
+        $RSYNC_ARGS+=" --bwlimit=${RSYNC_BW} "
+      fi
+      if [ "$MIRROR_LOG" ]; then
+        $RSYNC_ARGS+=" --log-file='${$MIRROR_LOG}' "
+      fi
+      if [ "$RSYNC_USER" ]; then
+        export RSYNC_USE
+        export RSYNC_PASSWORD
+      fi
+      $RSYNC_ARGS+=" ${RSYNC_HOST}::${RSYNC_PATH} $TO"
+    done    
+  else
+    printError "Can not execute rsync from $RSYNC_BIN"
+  fi
 }
 
 printHelp "People working... not finish yet"
