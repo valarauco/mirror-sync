@@ -1,4 +1,5 @@
 ## DO NOT CHANGE, ONLY IF NECESSARY
+LOCALNAME=`hostname -f`
 TO="/srv/mirrors/repo-x/"
 RSYNC_PATH="repo-x"
 RSYNC_HOST=some.mirror.org

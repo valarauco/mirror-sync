@@ -59,7 +59,7 @@ function printLog() {
     touch "$LOG_FILE"
   fi
   if [ -w "$LOG_FILE" ]; then
-    DATE=`date -u` #TODO cambiar por una fecha más corta  
+    DATE=`date -u` #TODO cambiar por una fecha más corta ISO  
     echo "[${DATE}] mirror-sync :: ${DATA}" >> $LOG_FILE
   else
     echo "Error :: Logfile not exist or is not writable" >&2
@@ -119,8 +119,17 @@ function argOption() {
 function loadConfig() {
   if [ -r "$CFG_FILE" ]; then
     . $CFG_FILE
+    if [ ! -x "$RSYNC_BIN" ]; then
+      printError "Can not execute rsync from $RSYNC_BIN"
+      exit 1
+    fi
+    if [ ! -x "$FLOCK_BIN" ]; then
+      printError "Can not execute flock from $FLOCK_BIN"
+      exit 1
+    fi
   else
     printError "Configfile not readable"
+    exit 1
   fi
 }
 
@@ -131,7 +140,10 @@ function syncMirrors() {
     if [ -r "$MIRROR_FILE" ]; then
       . "${CFG_DIR}/defaults"
       . $MIRROR_FILE
-      runRsync
+      (
+         $FLOCK_BIN -n 9 || printError "El proceso ya esta en ejecución"
+         runRsync
+       ) 9>"$LOCK"
     else
       printError "$MIRROR_FILE is not a valid mirror configuration file"
     fi
@@ -139,24 +151,41 @@ function syncMirrors() {
 }
 
 function runRsync(){
-  if [ -x $RSYNC_BIN ]; then
-    for (( i = 1 ; i <= $RSYNC_PASS ; i++ )); do
-      $RSYNC_OPTIONSN="RSYNC_OPTIONS${i}"
-      $RSYNC_ARGS="$RSYNC_EXTRA $EXCLUDE $RSYNC_OPTIONS ${!RSYNC_OPTIONSN}"
-      if [ "$RSYNC_BW" ]; then #TODO check if = 0
-        $RSYNC_ARGS+=" --bwlimit=${RSYNC_BW} "
-      fi
-      if [ "$MIRROR_LOG" ]; then
-        $RSYNC_ARGS+=" --log-file='${$MIRROR_LOG}' "
-      fi
-      if [ "$RSYNC_USER" ]; then
-        export RSYNC_USE
-        export RSYNC_PASSWORD
-      fi
-      $RSYNC_ARGS+=" ${RSYNC_HOST}::${RSYNC_PATH} $TO"
-    done    
+  for (( i = 1 ; i <= ${RSYNC_PASS} ; i++ )); do
+    RSYNC_OPTIONSN="RSYNC_OPTIONS${i}"
+    RSYNC_ARGS="$RSYNC_EXTRA $EXCLUDE $RSYNC_OPTIONS ${!RSYNC_OPTIONSN}"
+    if [ "$RSYNC_BW" ]; then #TODO check if = 0
+      RSYNC_ARGS+=" --bwlimit=${RSYNC_BW} "
+    fi
+    if [ "$MIRROR_LOG" ]; then
+      RSYNC_ARGS+=" --log-file='${$MIRROR_LOG}' "
+    fi
+    if [ "$RSYNC_USER" ]; then
+      export RSYNC_USE
+      export RSYNC_PASSWORD
+    fi
+    RSYNC_ARGS+=" ${RSYNC_HOST}::${RSYNC_PATH} $TO"
+    $RSYNC_BIN $RSYNC_ARGS 
+    RSYNC_EXIT=$?
+    if [ "$MAILTO" ]; then
+      if [ $RSYNC_EXIT -ne 0 -a "$ERRORSONLY" = "true" ]; then 
+        sendMailTo "$MAILTO" "$SUBJECT" "
+ An error occurred in $MIRROR_NAME with exit code ${RSYNC_EXIT}. 
+ Check the logfile $MIRROR_LOG for details."
+      elif [ "$ERRORSONLY" = "false"  ]; then
+        sendMailTo "$MAILTO" "$SUBJECT" "
+ Sync executed: Mirror $MIRROR_NAME with exit code ${RSYNC_EXIT}. 
+ Check the logfile $MIRROR_LOG for details."
+      fi 
+    fi
+  done    
+}
+
+function sendMailTo() {
+  if [ -x "$MAIL_BIN" ]; then
+    $MAIL_BIN -s "$2" "$1" "$3"
   else
-    printError "Can not execute rsync from $RSYNC_BIN"
+    printError "Can not execute mail from ${MAIL_BIN}, mail not sent"
   fi
 }
 
