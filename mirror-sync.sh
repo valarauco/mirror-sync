@@ -48,9 +48,12 @@ function printHelp() {
 }
 
 function printError() {
-  ERROR="$1"
+  ERROR="Error :: $1"
   printLog "$ERROR"
-  echo "Error :: ${ERROR}" >&2
+  echo "${ERROR}" >&2
+  if [ $2 ]; then
+    exit $2
+  fi
 }
 
 function printLog() {
@@ -70,9 +73,10 @@ function loadOptions() {
   BASE_DIR=`pwd`
   CFG_DIR="${BASE_DIR}/config"
   LOG_FILE="${BASE_DIR}/log/mirror-sync.log"
+  LST_MIRRORS=()
   
   if [ $# -lt 1 ];then
-    printHelp "Must specify a mirror"
+    printHelp "Must specify a mirror" 1
     exit 1
   fi
   
@@ -88,7 +92,6 @@ function loadOptions() {
         ;;
     esac
   done
-  
   CFG_FILE="${CFG_DIR}/mirror-sync.cfg"
 }
 
@@ -125,28 +128,25 @@ function loadConfig() {
   if [ -r "$CFG_FILE" ]; then
     . "$CFG_FILE"
     if [ ! -x "$RSYNC_BIN" ]; then
-      printError "Can not execute rsync from $RSYNC_BIN"
-      exit 1
+      printError "Can not execute rsync from $RSYNC_BIN" 1
     fi
     if [ ! -x "$FLOCK_BIN" ]; then
-      printError "Can not execute flock from $FLOCK_BIN"
-      exit 1
+      printError "Can not execute flock from $FLOCK_BIN" 1
     fi
   else
-    printError "Configfile not readable"
-    exit 1
+    printError "Configfile not readable" 1
   fi
 }
 
 function syncMirrors() {
   for (( i = 0 ; i < ${#LST_MIRRORS[@]} ; i++ )); do
-    MIRROR_NAME=$LST_MIRRORS[$i]
+    MIRROR_NAME=${LST_MIRRORS[$i]}
     MIRROR_FILE="${CFG_DIR}/${MIRROR_NAME}.cfg"
     if [ -r "$MIRROR_FILE" ]; then
       . "${CFG_DIR}/defaults"
       . "$MIRROR_FILE"
       (
-         $FLOCK_BIN -n 9 || printError "El proceso ya esta en ejecución"
+         $FLOCK_BIN -n 9 || printError "El proceso ya esta en ejecución" $?
          runRsync
        ) 9>"$LOCK"
     else
@@ -157,21 +157,30 @@ function syncMirrors() {
 
 function runRsync(){
   for (( i = 1 ; i <= ${RSYNC_PASS} ; i++ )); do
+    if [ ! -f "$MIRROR_LOG" -a "$MIRROR_LOG" ]; then
+      touch "$MIRROR_LOG"
+    fi
+    if [ ! -w "$MIRROR_LOG" ]; then
+      printError "$MIRROR_LOG not exist or is not writable, using default logfile"
+      MIRROR_LOG=$LOG_FILE
+    fi
+    
     RSYNC_OPTIONSN="RSYNC_OPTIONS${i}"
-    RSYNC_ARGS="$RSYNC_EXTRA $EXCLUDE $RSYNC_OPTIONS ${!RSYNC_OPTIONSN}"
+    RSYNC_ARGS="$RSYNC_EXTRA $EXCLUDE $RSYNC_OPTIONS ${!RSYNC_OPTIONSN}  --log-file="${MIRROR_LOG}""
     if [ "$RSYNC_BW" ]; then #TODO check if = 0
       RSYNC_ARGS+=" --bwlimit=${RSYNC_BW} "
-    fi
-    if [ "$MIRROR_LOG" ]; then
-      RSYNC_ARGS+=" --log-file='${$MIRROR_LOG}' "
     fi
     if [ "$RSYNC_USER" ]; then
       export RSYNC_USE
       export RSYNC_PASSWORD
     fi
     RSYNC_ARGS+=" ${RSYNC_HOST}::${RSYNC_PATH} $TO"
-    $RSYNC_BIN $RSYNC_ARGS 
+    printLog "Rsync command: $RSYNC_BIN $RSYNC_ARGS "
+    $RSYNC_BIN $RSYNC_ARGS > /dev/null
     RSYNC_EXIT=$?
+    if [ $RSYNC_EXIT -ne 0 ]; then
+      printError "Exit code: ${RSYNC_EXIT}, check $MIRROR_LOG for details"
+    fi
     if [ "$MAILTO" ]; then
       if [ $RSYNC_EXIT -ne 0 -a "$ERRORSONLY" = "true" ]; then 
         sendMailTo "$MAILTO" "$SUBJECT" "
@@ -196,6 +205,7 @@ function sendMailTo() {
 
 loadOptions $@
 loadConfig
+syncMirrors
 
 #printHelp "People working... not finish yet"
 
