@@ -58,8 +58,8 @@
 ## Our own lockfile (only one sync should run at any time)
 #LOCK="${TO}/mirror-sync-in-Progress-${LOCALNAME}"
 
-# Timeout for the lockfile, in case we have bash older than v4 (and no /proc)
-# LOCKTIMEOUT=${LOCKTIMEOUT:-3600}
+# Rsync timeout 
+# RSYNC_TIMEOUT=3600
 
 ## Extra rsync options as defined by the local admin.
 ##
@@ -88,7 +88,7 @@
 ##    -H, --hard-links   preserve hard links
 ##    -p, --perms        preserve permissions
 ##    -t, --times        preserve modification times
-#RSYNC_OPTIONS="-travplH --timeout 3600 --stats --exclude ${LOCK} "
+#RSYNC_OPTIONS="-travplH --stats --exclude ${LOCK} "
 
 ## Options in the first pass. We may do not want the Packages/Source indices
 ## here, and we also do not want to delete any files yet.

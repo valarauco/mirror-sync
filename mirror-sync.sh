@@ -21,7 +21,8 @@
 # Manuel Delgado Lopez - manuel.delgado@ucr.ac.cr                       #
 #########################################################################
 # TODO
-#   ---
+#   Use FULLLOGS variable
+#   Use HOOKS
 ##
 VERSION="v0.1"
 
@@ -170,6 +171,9 @@ function runRsync(){
     if [ "$RSYNC_BW" ]; then #TODO check if = 0
       RSYNC_ARGS+=" --bwlimit=${RSYNC_BW} "
     fi
+    if [ "$RSYNC_TIMEOUT" -gt 0 ]; then 
+      RSYNC_ARGS+=" --timeout=${RSYNC_TIMEOUT} "
+    fi
     if [ "$RSYNC_USER" ]; then
       export RSYNC_USE
       export RSYNC_PASSWORD
@@ -197,7 +201,7 @@ function runRsync(){
 
 function sendMailTo() {
   if [ -x "$MAIL_BIN" ]; then
-    $MAIL_BIN -s "$2" "$1" "$3"
+    $MAIL_BIN -s "$2" "$1" "$3" > /dev/null 
   else
     printError "Can not execute mail from ${MAIL_BIN}, mail not sent"
   fi
