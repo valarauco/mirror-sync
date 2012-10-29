@@ -23,6 +23,7 @@
 # TODO
 #   Use FULLLOGS variable
 #   Use HOOKS
+#   Redirect logs of executables to logfile
 ##
 VERSION="v0.1"
 
@@ -153,6 +154,7 @@ function syncMirrors() {
     else
       printError "$MIRROR_FILE is not a valid mirror configuration file"
     fi
+    rm "$LOCK"
   done
 }
 
@@ -187,13 +189,15 @@ function runRsync(){
     fi
     if [ "$MAILTO" ]; then
       if [ $RSYNC_EXIT -ne 0 -a "$ERRORSONLY" = "true" ]; then 
-        sendMailTo "$MAILTO" "$SUBJECT" "
+        sendMailTo "$MAILTO" "$SUBJECT" << EOF
  An error occurred in $MIRROR_NAME with exit code ${RSYNC_EXIT}. 
- Check the logfile $MIRROR_LOG for details."
+ Check the logfile $MIRROR_LOG for details.
+EOF
       elif [ "$ERRORSONLY" = "false"  ]; then
-        sendMailTo "$MAILTO" "$SUBJECT" "
+        sendMailTo "$MAILTO" "$SUBJECT" << EOF
  Sync executed: Mirror $MIRROR_NAME with exit code ${RSYNC_EXIT}. 
- Check the logfile $MIRROR_LOG for details."
+ Check the logfile $MIRROR_LOG for details.
+EOF
       fi 
     fi
   done    
@@ -206,6 +210,8 @@ function sendMailTo() {
     printError "Can not execute mail from ${MAIL_BIN}, mail not sent"
   fi
 }
+
+cd "`dirname \"$0\"`"
 
 loadOptions $@
 loadConfig
