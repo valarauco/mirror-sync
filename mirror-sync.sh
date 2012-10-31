@@ -200,6 +200,10 @@ EOF
 EOF
       fi 
     fi
+    if [ $RSYNC_EXIT -e 0 ]; then
+      $HOOKN="HOOK${i}"
+      $HOOKN &> "$LOGFILE"
+    fi
   done    
 }
 
