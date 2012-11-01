@@ -173,7 +173,7 @@ function runRsync(){
     if [ "$RSYNC_BW" ]; then #TODO check if = 0
       RSYNC_ARGS+=" --bwlimit=${RSYNC_BW} "
     fi
-    if [ "$RSYNC_TIMEOUT" -gt 0 ]; then 
+    if [ $RSYNC_TIMEOUT -gt 0 ]; then 
       RSYNC_ARGS+=" --timeout=${RSYNC_TIMEOUT} "
     fi
     if [ "$RSYNC_USER" ]; then
@@ -200,7 +200,7 @@ EOF
 EOF
       fi 
     fi
-    if [ $RSYNC_EXIT -e 0 ]; then
+    if [ $RSYNC_EXIT -eq 0 ]; then
       $HOOKN="HOOK${i}"
       $HOOKN &> "$LOGFILE"
     fi
