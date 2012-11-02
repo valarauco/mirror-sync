@@ -173,7 +173,7 @@ function runRsync(){
     if [ "$RSYNC_BW" ]; then #TODO check if = 0
       RSYNC_ARGS+=" --bwlimit=${RSYNC_BW} "
     fi
-    if [ "$RSYNC_TIMEOUT" -gt 0 ]; then 
+    if [ $RSYNC_TIMEOUT -gt 0 ]; then 
       RSYNC_ARGS+=" --timeout=${RSYNC_TIMEOUT} "
     fi
     if [ "$RSYNC_USER" ]; then
