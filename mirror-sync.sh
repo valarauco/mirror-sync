@@ -190,19 +190,21 @@ function runRsync(){
     if [ "$MAILTO" ]; then
       if [ $RSYNC_EXIT -ne 0 -a "$ERRORSONLY" = "true" ]; then 
         sendMailTo "$MAILTO" "$SUBJECT" << EOF
- An error occurred in $MIRROR_NAME with exit code ${RSYNC_EXIT}. 
+ An error occurred in $MIRROR_NAME with exit code ${RSYNC_EXIT} (${ERROR_CODES[$RSYNC_EXIT]}). 
  Check the logfile $MIRROR_LOG for details.
 EOF
       elif [ "$ERRORSONLY" = "false"  ]; then
         sendMailTo "$MAILTO" "$SUBJECT" << EOF
- Sync executed: Mirror $MIRROR_NAME with exit code ${RSYNC_EXIT}. 
+ Sync executed: Mirror $MIRROR_NAME with exit code ${RSYNC_EXIT} (${ERROR_CODES[$RSYNC_EXIT]}). 
  Check the logfile $MIRROR_LOG for details.
 EOF
       fi 
     fi
     if [ $RSYNC_EXIT -e 0 ]; then
-      $HOOKN="HOOK${i}"
-      $HOOKN &> "$LOGFILE"
+      HOOKN="HOOK${i}"
+      if [ "$HOOKN" ]; then
+        $HOOKN &> "$LOGFILE"
+      fi
     fi
   done    
 }
